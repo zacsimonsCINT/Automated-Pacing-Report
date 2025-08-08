@@ -1,1 +1,93 @@
+# --- Instructions ---
+# 1) Upload your Qualtrics CSV file and your Media Mapping CSV file to the Colab session.
+# 2) Run this script by selecting 'Run all' above.
+# 3) Fill in the filenames and the exact column names for your files.
+# 4) Click 'Clean and Analyze' to see the results.
+
+import pandas as pd
+import ipwidgets as widgets
+from IPython.display import display, clear_output, HTML
+import io
+import numpy as np
+
+qualtrics_file_input = widget.Text(
+  description='Qualtrics File:',
+  placeholder='Enter Qualtrics filename...'
+)
+
+media_map_file_input = widget.Text(
+  description='Media Map File:',
+  placeholder='Enter Mapping File path...'
+)
+
+qualtrics_id_col_input = widget.Text(
+  description='Qualtrics ID Col:',
+  value='AT_PLACEMENT_ID',
+  placeholder='e.g., AT_PLACEMENT_ID'
+)
+
+media_type_col_input = widget.Text(
+  description='Media Type Col:',
+  value='placement_id',
+  placeholder='e.g., placement_id'
+)
+
+samba_site_id_col_input = widget.Text(
+  description='Samba Site ID Col:',
+  value='AT_SITE_ID'
+  placeholder='e.g., AT_SITE_ID'
+)
+
+output_area = widget.Output()
+
+def clean_and_analyze_data(qualtrics_path, media_map_path, qualtrics_id_col, media_map_id_col, media_type_col, samba_site_id_col, vistar_site_id_col):
+  """
+  Cleans a Qualtrics CSV, seperates SambaS2S respondents, seperates Vistar respondents, merges the rest with a media map, and calculates counts.
+  """
+  try:
+      print(f"Processing '{qualtrics_path}'...")
+
+      df_qualtrics = pd.read_csv(qualtrics_path, header=0, skipsrows=[1], low_memory=False)
+      print('Qualtrics file loaded.')
+
+      df.qualtrics.columns = df_qualtrics_columns.str.lower().str.strip()
+      print('Standardized coulmn names to lowercase.')
+
+      if 'gc' in df_qualtrics.columns:
+        initial_rows = len(df_qualtrics)
+        df_qualtrics = df_qualtrics[df_qualtrics[gc].astype(str) != '2']
+        print(f"Filtered out {initial_rows - len(df_wualtrics)} rows where gc was '2'.")
+      else
+        print("Warning: 'gc' column not found. Could not filter for gc='2'.")
+
+      if 'status' in df_qualtrics.columns:
+        initial_rows = len(df_qualtrics)
+        df_qualtrics = df_qualtrics[fd_qualtrics['status'] != 'Survey Preview']
+        print(f"Filtered out {initial_rows - len(df_qualtrics)} 'Survey Preview' rows usuing the 'status' column.")
+      else:
+        print("Warning: 'status' column not found. Could not filter for previews.")
+
+      
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
