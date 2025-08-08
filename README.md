@@ -1,93 +1,88 @@
-Of course\! Here is a `README.md` file that explains the Python script.
+# Qualtrics Pacing and Media Analysis Tool
+
+This tool provides an interactive interface within a Jupyter or Google Colab notebook to clean and analyze survey data from Qualtrics for ad effectiveness studies. Its primary purpose is to check the **pacing** of a study—that is, to count the number of completed surveys that have come from different advertising channels (e.g., Linear TV, Facebook, TikTok, etc.).
+
+The script ingests a raw Qualtrics survey data file and a "media map" file. It automatically cleans the survey data, separates respondents who were exposed to Linear TV ads from those exposed to digital ads, and then uses the media map to categorize the digital respondents. The final output is a clear summary of respondent counts per media type, allowing researchers to quickly assess if their sample collection is on track. 📈
 
 -----
 
-# Campaign Pacing Report Generator
+## Key Features
 
-This script provides an on-demand reporting tool to check the delivery status (pacing) of active advertising campaigns. It is designed to run within a Databricks notebook environment.
-
-The user uploads a CSV file containing a list of campaign owner emails. The script then queries campaign and impression data for each email, calculates pacing metrics, and generates a consolidated report. The final report flags campaigns as **Ahead**, **Behind**, or **On Pace**, allowing users to quickly identify campaigns that may require attention.
+  * **Interactive UI**: Uses `ipywidgets` to create a user-friendly interface, eliminating the need to edit code for each run.
+  * **Automated Data Cleaning**: Filters out test data, survey previews, and incomplete responses from the raw Qualtrics export.
+  * **Respondent Segmentation**: Intelligently separates "Linear TV" respondents from the main "Exposed" group based on a specified site ID (`SambaS2S`).
+  * **Dynamic Media Mapping**: Joins the remaining survey data with a media mapping file to categorize respondents by their specific digital media source.
+  * **Clear Pacing Summary**: Outputs a simple, clean table of respondent counts by media type, including a count for any respondents that could not be mapped.
 
 -----
 
 ## Requirements
 
-  * **Environment**: A Databricks notebook. The script relies on a pre-configured `spark` session to execute SQL queries.
-  * **Permissions**: Read access to the `dsm.measurement.vw_im_campaigns` and `dsm.measurement.vw_impressions` tables/views in your Databricks environment.
-  * **Python Libraries**: The following libraries must be available in your notebook's environment:
-      * `pandas`
-      * `numpy`
-      * `ipywidgets`
+### Environment
+
+  * A Jupyter Notebook or Google Colab environment.
+  * The ability to upload your two CSV files to the notebook session's file system.
+
+### Python Libraries
+
+  * `pandas`
+  * `ipywidgets`
+  * `numpy`
 
 -----
 
-## Input File Format
+## Input File Requirements
 
-The script requires a CSV file as input. This file **must** contain a header row with a column named exactly `emails to query`. The script will process each email listed in this column.
+You will need **two** CSV files. The script is flexible, allowing you to specify the exact column names your files use.
 
-#### Example `input.csv`:
+### 1\. Qualtrics Survey Data File
 
-```csv
-emails to query
-user1@example.com
-user2@example.com
-another.user@example.com
-```
+This is the raw data export from your Qualtrics survey.
+
+  * It should be a **CSV** file.
+  * The script is designed to handle the standard Qualtrics format where the **second row is a secondary header** (e.g., "Click here to edit question text"). The script automatically skips this row.
+  * It should contain columns that identify:
+      * **Placement ID**: A unique ID for the ad placement a user saw (e.g., `AT_PLACEMENT_ID`). This is the key used to join with the media map.
+      * **Samba Site ID**: A column to identify Linear TV respondents, often with a value like `SambaS2S` (e.g., `AT_SITE_ID`).
+      * **Survey Status**: Columns like `finished`, `status`, and `gc` that indicate if a survey was completed successfully or is just a preview/test.
+
+### 2\. Media Mapping File
+
+This is a simple lookup file that connects a placement ID to a media partner or type.
+
+  * It should be a **CSV** file.
+  * It must contain columns for:
+      * **Placement ID**: The ID that matches the one in your Qualtrics file (e.g., `placement_id`). The script will remove any duplicate IDs from this file.
+      * **Media Type**: The corresponding name of the media partner or channel (e.g., `media_type` with values like 'Facebook', 'YouTube', 'Programmatic').
 
 -----
 
 ## How to Use
 
-The script creates an interactive widget within the Databricks notebook for easy operation.
+The script generates an easy-to-use control panel right in your notebook.
 
-1.  **Run the Script**: Execute the notebook cell containing the script code. This will display a file uploader and a "Generate Report" button.
-2.  **Prepare Your Input**: Create a `.csv` file with the email addresses you want to check, as described in the "Input File Format" section.
-3.  **Upload the File**: Click the **"Upload CSV"** button and select the `.csv` file you created.
-4.  **Generate the Report**: Click the green **"Generate Report"** button. The script will begin querying the data, and progress messages will appear in the output area.
-5.  **Save the Results**: Once complete, a large text block containing the report in CSV format will be printed. Copy the entire text block (from the header row to the last line of data) and paste it into a text editor. Save this new file with a `.csv` extension (e.g., `pacing_report.csv`). You can then open this file in any spreadsheet software like Excel or Google Sheets.
-
------
-
-## Logic & Calculations
-
-The script performs the following key steps to generate the report:
-
-### Data Querying
-
-For each email provided, the script executes a SQL query to fetch all *active* campaigns (where `end_date` is in the future). It joins campaign data with impression data to count the number of impressions delivered so far for each campaign.
-
-### Metric Calculation
-
-After retrieving the data, several key metrics are calculated using `pandas`:
-
-  * **Percent Delivered**: The percentage of expected impressions that have been delivered.
-    $$\text{Percent Delivered} = \frac{\text{Delivered Impressions}}{\text{Expected Impressions}} \times 100$$
-  * **Percent Time Elapsed**: The percentage of the campaign's total duration that has passed as of today.
-    $$\text{Percent Time Elapsed} = \frac{\text{Days from Start to Today}}{\text{Total Days in Campaign}} \times 100$$
-  * **Pacing Difference**: The simple arithmetic difference between the delivery progress and the time progress. A positive value means delivery is ahead of schedule, while a negative value means it is behind.
-    $$\text{Pacing Difference} = \text{Percent Delivered} - \text{Percent Time Elapsed}$$
-  * **Pacing Status**: A categorical flag to quickly identify the campaign's status based on the `pacing_difference`:
-      * **Ahead**: The `pacing_difference` is greater than `+15%`.
-      * **Behind**: The `pacing_difference` is less than `-15%`.
-      * **On Pace**: The `pacing_difference` is between `-15%` and `+15%`.
+1.  **Upload Files**: First, upload your Qualtrics CSV and your Media Mapping CSV to your notebook environment's session storage.
+2.  **Run the Script Cell**: Execute the Python code cell. This will display the UI shown below.
+3.  **Fill in the Fields**:
+      * Enter the exact filenames for your two uploaded files (e.g., `My_Qualtrics_Data.csv`).
+      * Verify the column names. The script provides common defaults, but you should change them to match your files **exactly**.
+4.  **Click to Analyze**: Press the green **"Clean and Analyze"** button.
+5.  **Review the Output**: The results will be printed in the output area below the button. The process logs will show you how many rows were filtered at each step, and the final output will be a table with the pacing counts.
 
 -----
 
-## Output Column Definitions
+## The Analysis Logic
 
-The final generated `.csv` report will contain the following columns:
+The script follows a clear, multi-step process to get from raw files to the final pacing counts.
 
-| Column Name | Description |
-| :--- | :--- |
-| **campaign\_id** | The unique identifier for the campaign. |
-| **campaign\_name** | The name of the campaign. |
-| **start\_date** | The date the campaign began or is set to begin. |
-| **end\_date** | The date the campaign ended or is set to end. |
-| **expected\_impressions\_count** | The total number of impressions booked for the campaign. |
-| **delivered\_impressions** | The actual number of impressions served to date. |
-| **percent\_delivered** | The percentage of expected impressions that have been delivered. |
-| **impressions\_remaining** | The number of impressions yet to be delivered (`expected - delivered`). |
-| **percent\_time\_elapsed** | The percentage of the campaign's total time duration that has passed. |
-| **pacing\_difference** | The numerical difference between `percent_delivered` and `percent_time_elapsed`. |
-| **pacing\_status** | A flag indicating if the campaign is 'Ahead', 'Behind', or 'On Pace'. |
-| **owner\_email** | The email address of the campaign owner, used to query the data. |
+1.  **Load & Clean Qualtrics Data**: The script loads the Qualtrics file, converts all column headers to lowercase for consistency, and then performs several cleaning steps:
+      * Removes test responses (where `gc` column is '2').
+      * Removes preview responses (where `status` column is 'Survey Preview').
+      * **Keeps only fully completed surveys** (where `finished` column is 'True'). This is the most important filter.
+2.  **Initial Segmentation**: It counts the initial number of **Exposed** and **Control** group respondents from the `studytype` column.
+3.  **Separate Linear TV**: From the pool of "Exposed" respondents, it identifies and separates anyone who came from Linear TV by checking the Samba Site ID column for the value `SambaS2S`. These are counted and set aside.
+4.  **Map Digital Media**:
+      * The remaining "Exposed" respondents are considered "Digital".
+      * The script performs a **left merge**, using the Placement ID as the key. This means it keeps *all* the digital respondents from the Qualtrics file and attaches the corresponding `media_type` from the media map.
+      * If a respondent's Placement ID isn't found in the media map, their `media_type` is labeled as **"Unmapped"**. This is useful for identifying missing IDs in your map.
+5.  **Final Tally**: The script counts the number of respondents for each `media_type` from the newly merged data, adds the "Linear TV" count back into the results, and displays the final summary table.
